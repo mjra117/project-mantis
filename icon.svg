@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <!-- Background -->
+  <rect width="128" height="128" rx="16" fill="#1a1a2e"/>
+  <!-- Duck body -->
+  <ellipse cx="60" cy="82" rx="36" ry="28" fill="#f5c518"/>
+  <!-- Duck head -->
+  <circle cx="86" cy="52" r="22" fill="#f5c518"/>
+  <!-- Duck eye -->
+  <circle cx="93" cy="46" r="4.5" fill="#1a1a2e"/>
+  <circle cx="94.5" cy="44.5" r="1.5" fill="white"/>
+  <!-- Duck bill -->
+  <path d="M102 56 Q116 52 114 60 Q116 64 102 62 Z" fill="#e07b10"/>
+  <!-- Duck wing -->
+  <ellipse cx="50" cy="80" rx="22" ry="12" fill="#d4a017" transform="rotate(-8 50 80)"/>
+  <!-- Hacker terminal lines -->
+  <rect x="18" y="92" width="38" height="3" rx="1.5" fill="#00ff41" opacity="0.8"/>
+  <rect x="18" y="99" width="26" height="3" rx="1.5" fill="#00ff41" opacity="0.55"/>
+  <rect x="18" y="106" width="32" height="3" rx="1.5" fill="#00ff41" opacity="0.35"/>
+  <!-- Cursor blink -->
+  <rect x="56" y="106" width="6" height="3" rx="1" fill="#00ff41" opacity="0.8"/>
+</svg>

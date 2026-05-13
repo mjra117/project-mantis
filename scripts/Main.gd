@@ -16,8 +16,8 @@ const ROOMS: Array = [
 	{"id": "noc",      "tx": 25, "ty": 29, "tw": 22, "th": 14, "level_start": 40, "theme": "dim",    "name": "NOC",            "unlockAt": 30},
 	{"id": "mgmt",     "tx": 49, "ty": 29, "tw": 22, "th": 14, "level_start": 30, "theme": "dim",    "name": "MANAGEMENT",     "unlockAt": 20},
 	{"id": "office",   "tx": 1,  "ty": 45, "tw": 22, "th": 14, "level_start": 0,  "theme": "normal", "name": "OPEN OFFICE",    "unlockAt": 0},
-	{"id": "it",       "tx": 25, "ty": 45, "tw": 22, "th": 14, "level_start": 10, "theme": "normal", "name": "IT DEPT",        "unlockAt": 5},
-	{"id": "server",   "tx": 49, "ty": 45, "tw": 22, "th": 14, "level_start": 20, "theme": "dim",    "name": "SERVER ROOM",    "unlockAt": 10},
+	{"id": "it",       "tx": 25, "ty": 45, "tw": 22, "th": 14, "level_start": 10, "theme": "dim",    "name": "IT DEPT",        "unlockAt": 5},
+	{"id": "server",   "tx": 49, "ty": 45, "tw": 22, "th": 14, "level_start": 20, "theme": "dark",   "name": "SERVER ROOM",    "unlockAt": 10},
 	{"id": "lobby",    "tx": 25, "ty": 61, "tw": 22, "th": 14, "level_start": -1, "theme": "lobby",  "name": "LOBBY",          "unlockAt": 0},
 ]
 
@@ -727,10 +727,10 @@ func _paint_room(room: Dictionary) -> void:
 					open_cells[Vector2i(tx + s + i, ty + th - 1)] = true
 			"W":
 				for i in range(l):
-					open_cells[Vector2i(tx, ty + s + i)] = true
+					open_cells[Vector2i(tx, ty + 1 + s + i)] = true
 			"E":
 				for i in range(l):
-					open_cells[Vector2i(tx + tw - 1, ty + s + i)] = true
+					open_cells[Vector2i(tx + tw - 1, ty + 1 + s + i)] = true
 
 	for x in range(tx, tx + tw):
 		for y in range(ty, ty + th):

@@ -626,12 +626,12 @@ const SRC_WALL  := 1   # walls.png  — 64 cols × 96 rows, 32×32 px per tile
 # Carpet center tiles are row 3 of floors.png, derived from the LPC wang set.
 # "lobby" is a guess at the plain-tile area near the bottom — adjust in editor.
 const FLOOR_TILES: Dictionary = {
-	"lobby":   Vector2i(0,  56),
-	"normal":  Vector2i(25, 3),
-	"dim":     Vector2i(7,  3),
-	"dark":    Vector2i(10, 3),
-	"darker":  Vector2i(19, 3),
-	"black":   Vector2i(22, 3),
+	"lobby":   Vector2i(0,  0),   # top-left of atlas
+	"normal":  Vector2i(0,  16),  # 16 rows down
+	"dim":     Vector2i(0,  32),  # 32 rows down
+	"dark":    Vector2i(0,  40),  # 40 rows down
+	"darker":  Vector2i(0,  48),  # 48 rows down
+	"black":   Vector2i(0,  56),  # near bottom
 }
 
 # Wall fill tiles — open walls.png in the TileSet editor (Source 1) and

@@ -137,6 +137,7 @@ func _ready() -> void:
 	_furniture_layer = get_node_or_null("FurnitureLayer") as TileMapLayer
 	_setup_tileset()
 	_paint_tilemap()
+	_paint_door_tiles()
 
 	_build_workstation_positions()
 	_build_walls()
@@ -336,6 +337,27 @@ func refresh_doors() -> void:
 		for child in body.get_children():
 			if child is CollisionShape2D:
 				child.set_deferred("disabled", not is_locked)
+	_paint_door_tiles()
+
+func _paint_door_tiles() -> void:
+	if _walls_layer == null:
+		return
+	var solved_count := GameState.get_solved_count()
+	for door_def in DOOR_DEFS:
+		var is_locked: bool = solved_count < int(door_def["unlockAt"])
+		var dest_room: String = door_def.get("dest", "normal")
+		var dest: Dictionary = {}
+		for r in ROOMS:
+			if r["id"] == dest_room:
+				dest = r
+				break
+		var wt: Vector2i = WALL_TILES.get(dest.get("theme", "normal"), WALL_TILES["normal"])
+		for x in range(int(door_def["tx"]), int(door_def["tx"]) + int(door_def["tw"])):
+			for y in range(int(door_def["ty"]), int(door_def["ty"]) + int(door_def["th"])):
+				if is_locked:
+					_walls_layer.set_cell(Vector2i(x, y), SRC_WALL, wt)
+				else:
+					_walls_layer.erase_cell(Vector2i(x, y))
 
 # ─── Player ────────────────────────────────────────────────────────────────────
 

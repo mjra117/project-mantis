@@ -117,6 +117,8 @@ var _floor_layer: TileMapLayer
 var _walls_layer: TileMapLayer
 var _furniture_layer: TileMapLayer
 
+var _npc_sprites: Array = []   # AnimatedSprite2D per NPC, same order as NPC_DEFS
+
 var _near_ws_idx: int = -1
 var _near_npc_idx: int = -1
 var _npc_dialog_open: bool = false
@@ -140,6 +142,7 @@ func _ready() -> void:
 	_build_walls()
 	_build_door_bodies()
 	_build_player()
+	_build_npcs()
 	_build_interact_ui()
 	_build_mission_ui()
 	_build_npc_ui()
@@ -356,6 +359,60 @@ func _build_player() -> void:
 	# Set starting position from saved state
 	_player.position = GameState.player_pos
 
+# ─── NPC sprites ───────────────────────────────────────────────────────────────
+
+# Which sprite sheet to use per NPC index (Male/Female/Teen for variety).
+const NPC_SPRITE_TYPES: Array = ["Female","Male","Female","Male","Male","Male","Male","Female"]
+
+func _build_npcs() -> void:
+	var char_base := "res://assets/characters/lpc_character_bases/LPC Character Bases/Human/"
+	# Cache textures per type to avoid reloading for each NPC.
+	var walk_cache: Dictionary = {}
+	var idle_cache: Dictionary = {}
+	for t in NPC_SPRITE_TYPES:
+		if not walk_cache.has(t):
+			walk_cache[t] = load(char_base + t + "/Walk.png") as Texture2D
+			idle_cache[t] = load(char_base + t + "/Idle.png") as Texture2D
+
+	for i in range(NPC_DEFS.size()):
+		var npc: Dictionary = NPC_DEFS[i]
+		var type: String = NPC_SPRITE_TYPES[i % NPC_SPRITE_TYPES.size()]
+		var walk_tex: Texture2D = walk_cache[type]
+		var idle_tex: Texture2D = idle_cache[type]
+
+		var frames := SpriteFrames.new()
+		var dirs := [["s", 0], ["w", 1], ["e", 2], ["n", 3]]
+		for d in dirs:
+			var key: String = d[0]
+			var row: int    = d[1]
+
+			frames.add_animation("walk_" + key)
+			frames.set_animation_speed("walk_" + key, 8.0)
+			frames.set_animation_loop("walk_" + key, true)
+			for f in range(8):
+				var at := AtlasTexture.new()
+				at.atlas = walk_tex
+				at.region = Rect2(f * 64, row * 64, 64, 64)
+				frames.add_frame("walk_" + key, at)
+
+			frames.add_animation("idle_" + key)
+			frames.set_animation_speed("idle_" + key, 1.0)
+			frames.set_animation_loop("idle_" + key, false)
+			var at2 := AtlasTexture.new()
+			at2.atlas = idle_tex
+			at2.region = Rect2(0, row * 64, 64, 64)
+			frames.add_frame("idle_" + key, at2)
+
+		var sprite := AnimatedSprite2D.new()
+		sprite.sprite_frames = frames
+		sprite.scale = Vector2(0.5, 0.5)
+		sprite.offset = Vector2(0, -16)
+		sprite.z_index = 4
+		sprite.position = Vector2(npc["tx"] * T, npc["ty"] * T)
+		sprite.play("idle_s")
+		add_child(sprite)
+		_npc_sprites.append(sprite)
+
 # ─── Interact UI ───────────────────────────────────────────────────────────────
 
 func _build_interact_ui() -> void:
@@ -413,6 +470,10 @@ func _process(_delta: float) -> void:
 			if d < best_npc_dist:
 				best_npc_dist = d
 				_near_npc_idx = i
+
+	# ── NPC sprite highlights ────────────────────────────────────────────────
+	for i in range(_npc_sprites.size()):
+		_npc_sprites[i].modulate = Color(1.2, 1.1, 0.6) if i == _near_npc_idx else Color.WHITE
 
 	# ── Interact label ───────────────────────────────────────────────────────
 	if _npc_dialog_open:

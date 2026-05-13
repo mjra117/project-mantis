@@ -1,6 +1,20 @@
-[gd_scene load_steps=2 format=3 uid="uid://main_scene"]
+[gd_scene load_steps=3 format=3 uid="uid://main_scene"]
 
 [ext_resource type="Script" path="res://scripts/Main.gd" id="1_main"]
+[ext_resource type="TileSet" path="res://tilesets/office_tileset.tres" id="2_tileset"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1_main")
+
+[node name="FloorLayer" type="TileMapLayer" parent="."]
+tile_set = ExtResource("2_tileset")
+z_index = -2
+
+[node name="WallsLayer" type="TileMapLayer" parent="."]
+tile_set = ExtResource("2_tileset")
+z_index = -1
+
+[node name="FurnitureLayer" type="TileMapLayer" parent="."]
+tile_set = ExtResource("2_tileset")
+y_sort_enabled = true
+z_index = 1

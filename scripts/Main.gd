@@ -117,7 +117,8 @@ var _floor_layer: TileMapLayer
 var _walls_layer: TileMapLayer
 var _furniture_layer: TileMapLayer
 
-var _npc_sprites: Array = []   # AnimatedSprite2D per NPC, same order as NPC_DEFS
+var _npc_sprites: Array = []          # AnimatedSprite2D per NPC, same order as NPC_DEFS
+var _workstation_sprites: Array = []  # Sprite2D per workstation, same order as _workstation_positions
 
 var _near_ws_idx: int = -1
 var _near_npc_idx: int = -1
@@ -140,6 +141,7 @@ func _ready() -> void:
 	_paint_door_tiles()
 
 	_build_workstation_positions()
+	_build_furniture()
 	_build_walls()
 	_build_door_bodies()
 	_build_player()
@@ -381,6 +383,54 @@ func _build_player() -> void:
 	# Set starting position from saved state
 	_player.position = GameState.player_pos
 
+# ─── Furniture ─────────────────────────────────────────────────────────────────
+
+const OFFICE_PATH := "res://assets/tilesets/lpc_office/"
+
+func _build_furniture() -> void:
+	var container := Node2D.new()
+	container.name = "FurnitureContainer"
+	container.y_sort_enabled = true
+	container.z_index = 2
+	add_child(container)
+
+	# Laptop at every workstation (128x128 @ 0.5 = 64x64 = 2x2 tiles)
+	var laptop_tex: Texture2D = load(OFFICE_PATH + "Laptop.png")
+	for pos: Vector2 in _workstation_positions:
+		var s := Sprite2D.new()
+		s.texture = laptop_tex
+		s.scale = Vector2(0.5, 0.5)
+		s.position = pos - Vector2(0, 8)   # nudge up so it sits above player feet
+		container.add_child(s)
+		_workstation_sprites.append(s)
+
+	# Decorative props — offset is in tiles from room origin (tx, ty)
+	_place_prop(container, "Water Cooler.png", "office",   Vector2(20, 5),  0.5)
+	_place_prop(container, "Copy Machine.png", "office",   Vector2(19, 11), 1.0)
+	_place_prop(container, "Water Cooler.png", "it",       Vector2(20, 5),  0.5)
+	_place_prop(container, "Coffee Maker.png", "it",       Vector2(1,  11), 1.0)
+	_place_prop(container, "Water Cooler.png", "lobby",    Vector2(1,  5),  0.5)
+	_place_prop(container, "Coffee Maker.png", "noc",      Vector2(1,  3),  1.0)
+	_place_prop(container, "Coffee Maker.png", "mgmt",     Vector2(1,  3),  1.0)
+	_place_prop(container, "Coffee Maker.png", "security", Vector2(19, 3),  1.0)
+	_place_prop(container, "Bins.png",         "server",   Vector2(1,  3),  0.35)
+	_place_prop(container, "Bins.png",         "vault",    Vector2(2,  3),  0.35)
+
+func _place_prop(parent: Node, filename: String, room_id: String,
+		tile_offset: Vector2, scale_val: float) -> void:
+	var room: Dictionary = {}
+	for r in ROOMS:
+		if r["id"] == room_id:
+			room = r
+			break
+	if room.is_empty():
+		return
+	var s := Sprite2D.new()
+	s.texture = load(OFFICE_PATH + filename) as Texture2D
+	s.scale = Vector2(scale_val, scale_val)
+	s.position = Vector2((room["tx"] + tile_offset.x) * T, (room["ty"] + tile_offset.y) * T)
+	parent.add_child(s)
+
 # ─── NPC sprites ───────────────────────────────────────────────────────────────
 
 # Which sprite sheet to use per NPC index (Male/Female/Teen for variety).
@@ -492,6 +542,19 @@ func _process(_delta: float) -> void:
 			if d < best_npc_dist:
 				best_npc_dist = d
 				_near_npc_idx = i
+
+	# ── Workstation sprite state ─────────────────────────────────────────────
+	for i in range(_workstation_sprites.size()):
+		var ws: Sprite2D = _workstation_sprites[i]
+		var room: Dictionary = _get_room_for_workstation(i)
+		if room.is_empty() or not GameState.is_room_unlocked(room["id"]):
+			ws.modulate = Color(0.4, 0.4, 0.4)
+		elif i == _near_ws_idx:
+			ws.modulate = Color(1.2, 1.1, 0.5)
+		elif GameState.is_solved(i + 1):
+			ws.modulate = Color(0.55, 1.0, 0.6)
+		else:
+			ws.modulate = Color.WHITE
 
 	# ── NPC sprite highlights ────────────────────────────────────────────────
 	for i in range(_npc_sprites.size()):

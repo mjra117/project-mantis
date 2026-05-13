@@ -144,12 +144,14 @@ func _ready() -> void:
 	_floor_layer     = get_node_or_null("FloorLayer") as TileMapLayer
 	_walls_layer     = get_node_or_null("WallsLayer") as TileMapLayer
 	_furniture_layer = get_node_or_null("FurnitureLayer") as TileMapLayer
+	_setup_tileset()
 	_paint_tilemap()
 
 	_build_workstation_positions()
 	_build_walls()
 	_build_door_bodies()
 	_build_map_renderer()
+	_map_renderer.visible = false
 	_build_player()
 	_build_interact_ui()
 	_build_mission_ui()
@@ -588,8 +590,36 @@ func _unhandled_input(event: InputEvent) -> void:
 			close_npc_dialog()
 			get_viewport().set_input_as_handled()
 
+# ─── TileMap setup ─────────────────────────────────────────────────────────────
+
+func _setup_tileset() -> void:
+	if _floor_layer == null:
+		return
+	var ts := TileSet.new()
+	ts.tile_size = Vector2i(T, T)
+
+	var floor_src := TileSetAtlasSource.new()
+	floor_src.texture = load("res://assets/tilesets/lpc_floors/lpc-floors/floors.png")
+	floor_src.texture_region_size = Vector2i(T, T)
+	for coords: Vector2i in FLOOR_TILES.values():
+		if not floor_src.has_tile(coords):
+			floor_src.create_tile(coords)
+	ts.add_source(floor_src, SRC_FLOOR)
+
+	var wall_src := TileSetAtlasSource.new()
+	wall_src.texture = load("res://assets/tilesets/lpc_walls/lpc-walls/walls.png")
+	wall_src.texture_region_size = Vector2i(T, T)
+	for coords: Vector2i in WALL_TILES.values():
+		if not wall_src.has_tile(coords):
+			wall_src.create_tile(coords)
+	ts.add_source(wall_src, SRC_WALL)
+
+	_floor_layer.tile_set = ts
+	_walls_layer.tile_set = ts
+	if _furniture_layer:
+		_furniture_layer.tile_set = ts
+
 # ─── TileMap painting ──────────────────────────────────────────────────────────
-# Atlas source IDs match office_tileset.tres sources/0 and sources/1
 const SRC_FLOOR := 0   # floors.png — 32 cols × 64 rows, 32×32 px per tile
 const SRC_WALL  := 1   # walls.png  — 64 cols × 96 rows, 32×32 px per tile
 

@@ -604,6 +604,9 @@ func _setup_tileset() -> void:
 	for coords: Vector2i in FLOOR_TILES.values():
 		if not floor_src.has_tile(coords):
 			floor_src.create_tile(coords)
+	for coords: Vector2i in FLOOR_TILES_WORN.values():
+		if coords != Vector2i(-1, -1) and not floor_src.has_tile(coords):
+			floor_src.create_tile(coords)
 	ts.add_source(floor_src, SRC_FLOOR)
 
 	var wall_src := TileSetAtlasSource.new()
@@ -623,15 +626,38 @@ func _setup_tileset() -> void:
 const SRC_FLOOR := 0   # floors.png — 32 cols × 64 rows, 32×32 px per tile
 const SRC_WALL  := 1   # walls.png  — 64 cols × 96 rows, 32×32 px per tile
 
-# Carpet center tiles are row 3 of floors.png, derived from the LPC wang set.
-# "lobby" is a guess at the plain-tile area near the bottom — adjust in editor.
+# floors.png is organised in 8-row bands, each band = one carpet/floor colour.
+# col 0 of each band is the top-left variant (confirmed distinct across bands).
+# Quality improves as level_start increases: lobby < normal < dim < dark < darker < black.
 const FLOOR_TILES: Dictionary = {
-	"lobby":   Vector2i(0,  0),   # top-left of atlas
-	"normal":  Vector2i(0,  16),  # 16 rows down
-	"dim":     Vector2i(0,  32),  # 32 rows down
-	"dark":    Vector2i(0,  40),  # 40 rows down
-	"darker":  Vector2i(0,  48),  # 48 rows down
-	"black":   Vector2i(0,  56),  # near bottom
+	"lobby":   Vector2i(0,  0),   # stone/tile entrance (band 0)
+	"normal":  Vector2i(0,  16),  # worn carpet – ground floor (band 2)
+	"dim":     Vector2i(0,  32),  # basic clean carpet (band 4)
+	"dark":    Vector2i(0,  40),  # mid-grade carpet (band 5)
+	"darker":  Vector2i(0,  48),  # premium carpet (band 6)
+	"black":   Vector2i(0,  56),  # server vault – industrial dark (band 7)
+}
+
+# Worn/patch variant tile used randomly in low-quality rooms.
+# Same band as FLOOR_TILES but col 2 = adjacent atlas tile (different orientation).
+# Vector2i(-1,-1) means no worn variation for that theme.
+const FLOOR_TILES_WORN: Dictionary = {
+	"lobby":   Vector2i(-1, -1),
+	"normal":  Vector2i(2,  16),  # patchy worn tile – 25 % of ground floor interior
+	"dim":     Vector2i(2,  32),  # slight scuff – 8 % in server/noc/mgmt
+	"dark":    Vector2i(-1, -1),
+	"darker":  Vector2i(-1, -1),
+	"black":   Vector2i(-1, -1),
+}
+
+# Percentage (0–100) chance an interior cell uses the worn variant.
+const FLOOR_WORN_PCT: Dictionary = {
+	"lobby":   0,
+	"normal":  25,
+	"dim":     8,
+	"dark":    0,
+	"darker":  0,
+	"black":   0,
 }
 
 # Wall fill tiles — open walls.png in the TileSet editor (Source 1) and
@@ -664,6 +690,9 @@ func _paint_room(room: Dictionary) -> void:
 	var theme: String = room.get("theme", "normal")
 	var ft: Vector2i = FLOOR_TILES.get(theme, FLOOR_TILES["normal"])
 	var wt: Vector2i = WALL_TILES.get(theme, WALL_TILES["normal"])
+	var ft_worn: Vector2i = FLOOR_TILES_WORN.get(theme, Vector2i(-1, -1))
+	var worn_pct: int  = FLOOR_WORN_PCT.get(theme, 0)
+	var room_seed: int = rid.hash()
 
 	var open_cells: Dictionary = {}
 	for op in OPENINGS.get(rid, []):
@@ -687,7 +716,13 @@ func _paint_room(room: Dictionary) -> void:
 		for y in range(ty, ty + th):
 			var coord := Vector2i(x, y)
 			var is_border := (x == tx or x == tx + tw - 1 or y == ty or y == ty + th - 1)
-			_floor_layer.set_cell(coord, SRC_FLOOR, ft)
+			var tile: Vector2i = ft
+			if not is_border and worn_pct > 0 and ft_worn != Vector2i(-1, -1):
+				# Deterministic hash per cell — same worn pattern every run
+				var h: int = (x * 374761393 + y * 668265263 + room_seed) & 0x7FFFFFFF
+				if h % 100 < worn_pct:
+					tile = ft_worn
+			_floor_layer.set_cell(coord, SRC_FLOOR, tile)
 			if is_border and not open_cells.has(coord):
 				_walls_layer.set_cell(coord, SRC_WALL, wt)
 

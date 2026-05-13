@@ -405,7 +405,7 @@ func _build_npcs() -> void:
 
 		var sprite := AnimatedSprite2D.new()
 		sprite.sprite_frames = frames
-		sprite.scale = Vector2(0.5, 0.5)
+		sprite.scale = Vector2(0.54, 0.54)
 		sprite.offset = Vector2(0, -16)
 		sprite.z_index = 4
 		sprite.position = Vector2(npc["tx"] * T, npc["ty"] * T)

@@ -29,7 +29,7 @@ func _ready() -> void:
 
 func _setup_sprite() -> void:
 	_sprite = AnimatedSprite2D.new()
-	_sprite.scale = Vector2(0.5, 0.5)   # 64px → 32px to match tile grid
+	_sprite.scale = Vector2(0.54, 0.54)
 	_sprite.offset = Vector2(0, -16)    # shift up so feet sit at body centre
 
 	var frames := SpriteFrames.new()

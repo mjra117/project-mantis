@@ -124,6 +124,10 @@ var _interact_canvas: CanvasLayer
 var _door_bodies: Dictionary = {}   # door_id -> StaticBody2D
 var _workstation_positions: Array[Vector2] = []
 
+var _floor_layer: TileMapLayer
+var _walls_layer: TileMapLayer
+var _furniture_layer: TileMapLayer
+
 var _near_ws_idx: int = -1
 var _near_npc_idx: int = -1
 var _npc_dialog_open: bool = false
@@ -136,6 +140,11 @@ const WALL_T := 1
 
 func _ready() -> void:
 	RenderingServer.set_default_clear_color(Color(0.52, 0.48, 0.42))
+
+	_floor_layer     = get_node_or_null("FloorLayer") as TileMapLayer
+	_walls_layer     = get_node_or_null("WallsLayer") as TileMapLayer
+	_furniture_layer = get_node_or_null("FurnitureLayer") as TileMapLayer
+	_paint_tilemap()
 
 	_build_workstation_positions()
 	_build_walls()
@@ -578,6 +587,91 @@ func _unhandled_input(event: InputEvent) -> void:
 		if event.keycode == KEY_ESCAPE:
 			close_npc_dialog()
 			get_viewport().set_input_as_handled()
+
+# ─── TileMap painting ──────────────────────────────────────────────────────────
+# Atlas source IDs match office_tileset.tres sources/0 and sources/1
+const SRC_FLOOR := 0   # floors.png — 32 cols × 64 rows, 32×32 px per tile
+const SRC_WALL  := 1   # walls.png  — 64 cols × 96 rows, 32×32 px per tile
+
+# Carpet center tiles are row 3 of floors.png, derived from the LPC wang set.
+# "lobby" is a guess at the plain-tile area near the bottom — adjust in editor.
+const FLOOR_TILES: Dictionary = {
+	"lobby":   Vector2i(0,  56),
+	"normal":  Vector2i(25, 3),
+	"dim":     Vector2i(7,  3),
+	"dark":    Vector2i(10, 3),
+	"darker":  Vector2i(19, 3),
+	"black":   Vector2i(22, 3),
+}
+
+# Wall fill tiles — open walls.png in the TileSet editor (Source 1) and
+# update these Vector2i(col, row) values to match your preferred style.
+const WALL_TILES: Dictionary = {
+	"lobby":   Vector2i(8,  4),
+	"normal":  Vector2i(8,  4),
+	"dim":     Vector2i(24, 4),
+	"dark":    Vector2i(32, 4),
+	"darker":  Vector2i(40, 4),
+	"black":   Vector2i(48, 4),
+}
+
+func _paint_tilemap() -> void:
+	if _floor_layer == null or _walls_layer == null:
+		return
+	for room in ROOMS:
+		_paint_room(room)
+	for corr in NS_CORRIDORS:
+		_paint_corridor_ns(corr)
+	for corr in EW_CORRIDORS:
+		_paint_corridor_ew(corr)
+
+func _paint_room(room: Dictionary) -> void:
+	var tx: int = room["tx"]
+	var ty: int = room["ty"]
+	var tw: int = room["tw"]
+	var th: int = room["th"]
+	var rid: String = room["id"]
+	var theme: String = room.get("theme", "normal")
+	var ft: Vector2i = FLOOR_TILES.get(theme, FLOOR_TILES["normal"])
+	var wt: Vector2i = WALL_TILES.get(theme, WALL_TILES["normal"])
+
+	var open_cells: Dictionary = {}
+	for op in OPENINGS.get(rid, []):
+		var s: int = op["start"]
+		var l: int = op["len"]
+		match op["wall"]:
+			"N":
+				for i in range(l):
+					open_cells[Vector2i(tx + s + i, ty)] = true
+			"S":
+				for i in range(l):
+					open_cells[Vector2i(tx + s + i, ty + th - 1)] = true
+			"W":
+				for i in range(l):
+					open_cells[Vector2i(tx, ty + s + i)] = true
+			"E":
+				for i in range(l):
+					open_cells[Vector2i(tx + tw - 1, ty + s + i)] = true
+
+	for x in range(tx, tx + tw):
+		for y in range(ty, ty + th):
+			var coord := Vector2i(x, y)
+			var is_border := (x == tx or x == tx + tw - 1 or y == ty or y == ty + th - 1)
+			_floor_layer.set_cell(coord, SRC_FLOOR, ft)
+			if is_border and not open_cells.has(coord):
+				_walls_layer.set_cell(coord, SRC_WALL, wt)
+
+func _paint_corridor_ns(corr: Dictionary) -> void:
+	var ft: Vector2i = FLOOR_TILES.get(corr.get("theme", "normal"), FLOOR_TILES["normal"])
+	for x in range(corr["cx"], corr["cx"] + 4):
+		for y in range(corr["ty"], corr["ty"] + corr["th"]):
+			_floor_layer.set_cell(Vector2i(x, y), SRC_FLOOR, ft)
+
+func _paint_corridor_ew(corr: Dictionary) -> void:
+	var ft: Vector2i = FLOOR_TILES.get(corr.get("theme", "normal"), FLOOR_TILES["normal"])
+	for x in range(corr["tx"], corr["tx"] + corr["tw"]):
+		for y in range(corr["ty"], corr["ty"] + corr["th"]):
+			_floor_layer.set_cell(Vector2i(x, y), SRC_FLOOR, ft)
 
 # ─── Inner draw class ──────────────────────────────────────────────────────────
 

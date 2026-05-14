@@ -12,7 +12,7 @@ const C_SCREEN   := Color(0.01, 0.04, 0.01)
 const C_DONE     := Color(0.0, 0.55, 0.28)
 const C_PENDING  := Color(0.12, 0.30, 0.12)
 
-var _steps: Array = []
+var _steps: Array[String] = []
 var _step_idx: int = -1
 var _timer: float = 0.0
 var _done: bool = false
@@ -94,7 +94,7 @@ func _advance() -> void:
 		var ms := float(parts[1]) if parts.size() > 1 and parts[1].is_valid_float() else 500.0
 		_timer = clampf(ms / 1200.0, 0.35, 1.2)
 	elif up.begins_with("STRING"):
-		var text_len := max(_steps[_step_idx].length() - 7, 0)
+		var text_len: int = maxi(_steps[_step_idx].length() - 7, 0)
 		_timer = clampf(0.35 + text_len * 0.04, 0.4, 1.5)
 	else:
 		_timer = 0.55
@@ -177,8 +177,8 @@ func _interpret(line: String) -> String:
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
-func _parse(code: String) -> Array:
-	var result: Array = []
+func _parse(code: String) -> Array[String]:
+	var result: Array[String] = []
 	for raw in code.split("\n"):
 		var line := raw.strip_edges()
 		if line.is_empty():

@@ -25,6 +25,7 @@ func _ready() -> void:
 	_camera.position_smoothing_enabled = true
 	_camera.position_smoothing_speed = 8.0
 	add_child(_camera)
+	_camera.reset_smoothing()
 	_setup_sprite()
 
 func _setup_sprite() -> void:

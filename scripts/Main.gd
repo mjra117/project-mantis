@@ -378,10 +378,9 @@ func _build_player() -> void:
 	shape.shape = capsule
 	_player.add_child(shape)
 
-	add_child(_player)
-
-	# Set starting position from saved state
+	# Set position BEFORE add_child so Camera2D initialises at the correct world position.
 	_player.position = GameState.player_pos
+	add_child(_player)
 
 # ─── Furniture ─────────────────────────────────────────────────────────────────
 

@@ -117,8 +117,8 @@ var _floor_layer: TileMapLayer
 var _walls_layer: TileMapLayer
 var _furniture_layer: TileMapLayer
 
-var _npc_sprites: Array = []          # AnimatedSprite2D per NPC, same order as NPC_DEFS
-var _workstation_sprites: Array = []  # Sprite2D per workstation, same order as _workstation_positions
+var _npc_sprites: Array = []     # AnimatedSprite2D per NPC, same order as NPC_DEFS
+var _workstations_node: Node2D   # WorkstationsNode draws all per-desk procedural visuals
 
 var _near_ws_idx: int = -1
 var _near_npc_idx: int = -1
@@ -388,23 +388,23 @@ func _build_player() -> void:
 const OFFICE_PATH := "res://assets/tilesets/lpc_office/"
 
 func _build_furniture() -> void:
+	# Workstations: procedural per-desk drawing (chair, desk, monitor, personality extras)
+	var ws_node_script := load("res://scripts/WorkstationsNode.gd")
+	_workstations_node = Node2D.new()
+	_workstations_node.name = "WorkstationsNode"
+	_workstations_node.script = ws_node_script
+	_workstations_node.z_index = 2
+	add_child(_workstations_node)
+	_workstations_node.main_ref = self
+
+	# Decorative props container — offset is in tiles from room origin (tx, ty)
 	var container := Node2D.new()
 	container.name = "FurnitureContainer"
 	container.y_sort_enabled = true
 	container.z_index = 2
 	add_child(container)
 
-	# Laptop at every workstation (128x128 @ 0.5 = 64x64 = 2x2 tiles)
-	var laptop_tex: Texture2D = load(OFFICE_PATH + "Laptop.png")
-	for pos: Vector2 in _workstation_positions:
-		var s := Sprite2D.new()
-		s.texture = laptop_tex
-		s.scale = Vector2(0.5, 0.5)
-		s.position = pos - Vector2(0, 8)   # nudge up so it sits above player feet
-		container.add_child(s)
-		_workstation_sprites.append(s)
-
-	# Decorative props — offset is in tiles from room origin (tx, ty)
+	# Room props
 	_place_prop(container, "Water Cooler.png", "office",   Vector2(20, 5),  0.5)
 	_place_prop(container, "Copy Machine.png", "office",   Vector2(19, 11), 1.0)
 	_place_prop(container, "Water Cooler.png", "it",       Vector2(20, 5),  0.5)
@@ -543,18 +543,9 @@ func _process(_delta: float) -> void:
 				best_npc_dist = d
 				_near_npc_idx = i
 
-	# ── Workstation sprite state ─────────────────────────────────────────────
-	for i in range(_workstation_sprites.size()):
-		var ws: Sprite2D = _workstation_sprites[i]
-		var room: Dictionary = _get_room_for_workstation(i)
-		if room.is_empty() or not GameState.is_room_unlocked(room["id"]):
-			ws.modulate = Color(0.4, 0.4, 0.4)
-		elif i == _near_ws_idx:
-			ws.modulate = Color(1.2, 1.1, 0.5)
-		elif GameState.is_solved(i + 1):
-			ws.modulate = Color(0.55, 1.0, 0.6)
-		else:
-			ws.modulate = Color.WHITE
+	# ── Workstation draw node refresh ───────────────────────────────────────
+	if _workstations_node:
+		_workstations_node.queue_redraw()
 
 	# ── NPC sprite highlights ────────────────────────────────────────────────
 	for i in range(_npc_sprites.size()):
@@ -842,4 +833,3 @@ func _paint_corridor_ew(corr: Dictionary) -> void:
 	for x in range(corr["tx"], corr["tx"] + corr["tw"]):
 		for y in range(corr["ty"], corr["ty"] + corr["th"]):
 			_floor_layer.set_cell(Vector2i(x, y), SRC_FLOOR, ft)
-

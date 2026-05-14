@@ -16,7 +16,7 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 
 config/name="Ducky Script: Zero to Hero"
 config/description="A top-down 2D hacking game where you write Ducky Script payloads to infiltrate a corporate office."
-run/main_scene="res://Main.tscn"
+run/main_scene="res://IntroAnimation.tscn"
 config/features=PackedStringArray("4.6", "GL Compatibility")
 config/icon="res://icon.svg"
 

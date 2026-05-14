@@ -37,6 +37,8 @@ var _output_label: RichTextLabel
 # Signals
 signal mission_closed
 
+var _replay_ui  # ScriptReplayUI CanvasLayer
+
 # ── Color palette ──────────────────────────────────────────────────────────────
 const C_BG        := Color(0.02, 0.05, 0.02, 0.97)
 const C_PANEL     := Color(0.03, 0.08, 0.03)
@@ -89,7 +91,14 @@ EXAMPLE PAYLOADS
 func _ready() -> void:
 	layer = 10
 	_build_ui()
+	_build_replay_ui()
 	hide()
+
+func _build_replay_ui() -> void:
+	var script := load("res://scripts/ScriptReplayUI.gd")
+	_replay_ui = CanvasLayer.new()
+	_replay_ui.script = script
+	add_child(_replay_ui)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # UI Construction
@@ -585,6 +594,9 @@ func run_payload() -> void:
 		var main := get_node_or_null("/root/Main")
 		if main and main.has_method("refresh_workstations"):
 			main.refresh_workstations()
+		# Show script execution replay
+		if _replay_ui:
+			_replay_ui.play(code, id)
 	else:
 		_output_label.text = "[color=#ff4444]✗ PAYLOAD REJECTED. Check the requirements and try again.[/color]"
 
